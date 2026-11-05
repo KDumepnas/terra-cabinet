@@ -1,20 +1,32 @@
 <?php
 declare(strict_types=1);
 
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-
 // Set these environment variables on the web host. Keep real credentials out of source control.
 $dbHost = getenv('DB_HOST') ?: 'localhost';
 $dbPort = getenv('DB_PORT') ?: '3307';
 $dbName = getenv('DB_NAME') ?: '';
 $dbUser = getenv('DB_USER') ?: '';
 $dbPassword = getenv('DB_PASSWORD') ?: '';
-$studentId = getenv('STUDENT_ID') ?: 'specimen';
+$adminUsername = getenv('ADMIN_USERNAME') ?: '';
+$adminPasswordHash = getenv('ADMIN_PASSWORD_HASH') ?: '';
+$studentId = getenv('STUDENT_ID') ?: '2400544';
 
 // A server-specific config.local.php can provide credentials when environment
 // variables are unavailable. That file is excluded from version control.
 $localConfig = __DIR__ . '/config.local.php';
 if (is_file($localConfig)) require $localConfig;
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    $secureCookie = isset($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off';
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => $secureCookie,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+    session_start();
+}
 
 if (!preg_match('/^[A-Za-z0-9]+$/', $studentId)) {
     http_response_code(500);
@@ -82,4 +94,56 @@ function verify_csrf_token(): bool
 {
     if (session_status() !== PHP_SESSION_ACTIVE) session_start();
     return isset($_SESSION['csrf_token'], $_POST['csrf']) && hash_equals($_SESSION['csrf_token'], (string)$_POST['csrf']);
+}
+
+function is_admin(): bool
+{
+    global $adminUsername;
+    return $adminUsername !== '' && isset($_SESSION['admin_username'])
+        && hash_equals((string)$adminUsername, (string)$_SESSION['admin_username']);
+}
+
+function validated_next_path(?string $candidate): string
+{
+    if (!is_string($candidate) || $candidate === '' || str_contains($candidate, '\\')) return 'index.php';
+    $parts = parse_url($candidate);
+    if ($parts === false || isset($parts['scheme'], $parts['host'], $parts['user'], $parts['pass'], $parts['fragment'])) return 'index.php';
+    $path = $parts['path'] ?? '';
+    $allowed = ['index.php', 'add-item.php', 'edit-item.php', 'manage-categories.php', 'seed.php', 'messages.php'];
+    if (str_starts_with($path, '/') || str_contains($path, '..') || !in_array($path, $allowed, true)) return 'index.php';
+
+    parse_str($parts['query'] ?? '', $query);
+    $safeQuery = [];
+    foreach (['id', 'slug'] as $key) {
+        if (!isset($query[$key]) || !is_scalar($query[$key])) continue;
+        $value = (string)$query[$key];
+        if ($key === 'id' && ctype_digit($value)) $safeQuery[$key] = $value;
+        if ($key === 'slug' && preg_match('/^[a-z0-9-]{1,190}$/i', $value)) $safeQuery[$key] = $value;
+    }
+    return $path . ($safeQuery ? '?' . http_build_query($safeQuery) : '');
+}
+
+function require_admin(): void
+{
+    if (is_admin()) return;
+    $next = 'index.php';
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+        $script = basename((string)($_SERVER['SCRIPT_NAME'] ?? 'index.php'));
+        $candidate = $script . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '');
+        $next = validated_next_path($candidate);
+    }
+    header('Location: login.php?next=' . rawurlencode($next), true, 303);
+    exit;
+}
+
+function set_flash(string $type, string $message): void
+{
+    $_SESSION['flash'] = ['type' => $type, 'message' => $message];
+}
+
+function take_flash(): ?array
+{
+    $flash = $_SESSION['flash'] ?? null;
+    unset($_SESSION['flash']);
+    return is_array($flash) ? $flash : null;
 }

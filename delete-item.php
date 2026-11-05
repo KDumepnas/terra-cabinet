@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/config.php';
+require_admin();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf_token()) { http_response_code(403); exit('Request denied. Return to the catalogue and try again.'); }
 $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
 if (!$id) { http_response_code(400); exit('A valid specimen ID is required.'); }

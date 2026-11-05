@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/config.php';
+require_admin();
 
 // Run once from a browser or CLI after importing database.sql.
 $items = [

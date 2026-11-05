@@ -21,7 +21,7 @@ $itemCategories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
 <header class="site-header">
     <a class="logo" href="index.php">Terra Cabinet</a>
-    <nav><ul><li><a href="index.php">Home</a></li><li><a href="about.php">About</a></li><li><a href="contact.php">Contact</a></li><li><a href="add-item.php">Add a specimen</a></li></ul></nav>
+    <nav><ul><li><a href="index.php">Home</a></li><li><a href="about.php">About</a></li><li><a href="contact.php">Contact</a></li><?php if (is_admin()): ?><li><a href="add-item.php">Add a specimen</a></li><li><form method="post" action="logout.php"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><button class="nav-action" type="submit">Log out</button></form></li><?php else: ?><li><a href="login.php">Admin login</a></li><?php endif; ?></ul></nav>
 </header>
 <main><section class="specimen-detail">
     <a href="index.php" class="back-link">&larr; Back to collection</a>
@@ -33,13 +33,13 @@ $itemCategories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
             <span class="price">₱<?= e(number_format((float)$item['price'], 0)) ?></span>
             <p class="description"><?= e($item['description']) ?></p>
             <dl class="specs">
-                <div class="spec-row"><dt>Categories</dt><dd><ul class="detail-category-list"><?php foreach ($itemCategories as $category): ?><li><span><?= e($category['name']) ?></span><form method="post" action="remove-category-link.php"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="specimen_id" value="<?= (int)$item['id'] ?>"><input type="hidden" name="category_id" value="<?= (int)$category['id'] ?>"><button class="manage-link delete-link" type="submit" aria-label="Remove <?= e($category['name']) ?> from this specimen">Remove</button></form></li><?php endforeach; ?></ul><a class="manage-link" href="edit-item.php?id=<?= (int)$item['id'] ?>">Assign categories</a></dd></div>
+                <div class="spec-row"><dt>Categories</dt><dd><ul class="detail-category-list"><?php foreach ($itemCategories as $category): ?><li><span><?= e($category['name']) ?></span><?php if (is_admin()): ?><form method="post" action="remove-category-link.php"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="specimen_id" value="<?= (int)$item['id'] ?>"><input type="hidden" name="category_id" value="<?= (int)$category['id'] ?>"><button class="manage-link delete-link" type="submit" aria-label="Remove <?= e($category['name']) ?> from this specimen">Remove</button></form><?php endif; ?></li><?php endforeach; ?></ul><?php if (is_admin()): ?><a class="manage-link" href="edit-item.php?id=<?= (int)$item['id'] ?>">Assign categories</a><?php endif; ?></dd></div>
                 <div class="spec-row"><dt>Formula</dt><dd><?= e($item['formula']) ?></dd></div>
                 <div class="spec-row"><dt>Hardness</dt><dd><?= e($item['hardness']) ?></dd></div>
                 <div class="spec-row"><dt>Locality</dt><dd><?= e($item['locality']) ?></dd></div>
             </dl>
             <a href="mailto:terracabinet@gmail.com?subject=Specimen%20inquiry%3A%20<?= rawurlencode($item['name']) ?>" class="btn">Inquire to purchase</a>
-            <div class="detail-manage"><a class="manage-link" href="edit-item.php?id=<?= (int)$item['id'] ?>">Edit listing</a><form method="post" action="delete-item.php" onsubmit="return confirm('Delete this specimen from the catalogue?');"><input type="hidden" name="id" value="<?= (int)$item['id'] ?>"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><button class="manage-link delete-link" type="submit">Delete listing</button></form></div>
+            <?php if (is_admin()): ?><div class="detail-manage"><a class="manage-link" href="edit-item.php?id=<?= (int)$item['id'] ?>">Edit listing</a><form method="post" action="delete-item.php" onsubmit="return confirm('Delete this specimen from the catalogue?');"><input type="hidden" name="id" value="<?= (int)$item['id'] ?>"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><button class="manage-link delete-link" type="submit">Delete listing</button></form></div><?php endif; ?>
         </div>
     </div>
 </section></main>

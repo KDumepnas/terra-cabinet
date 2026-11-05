@@ -44,7 +44,7 @@ try {
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="site-header"><a class="logo" href="index.php">Terra Cabinet</a><nav><ul><li><a href="index.php" aria-current="page">Home</a></li><li><a href="about.php">About</a></li><li><a href="contact.php">Contact</a></li><li><a href="add-item.php">Add a specimen</a></li></ul></nav></header>
+<header class="site-header"><a class="logo" href="index.php">Terra Cabinet</a><nav><ul><li><a href="index.php" aria-current="page">Home</a></li><li><a href="about.php">About</a></li><li><a href="contact.php">Contact</a></li><?php if (is_admin()): ?><li><a href="add-item.php">Add a specimen</a></li><li><form method="post" action="logout.php"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><button class="nav-action" type="submit">Log out</button></form></li><?php else: ?><li><a href="login.php">Admin login</a></li><?php endif; ?></ul></nav></header>
 <section class="hero">
     <div class="hero-grid">
         <div class="hero-copy">
@@ -61,7 +61,7 @@ try {
         <p class="eyebrow">A growing field catalogue</p>
         <h2 id="intro-title">Every stone has a story.</h2>
         <p>Explore a carefully recorded collection of minerals, crystals, and geological curiosities. Each entry includes notes on its character, composition, and place of origin.</p>
-        <a class="link-arrow" href="add-item.php">Contribute a specimen &rarr;</a>
+        <?php if (is_admin()): ?><a class="link-arrow" href="add-item.php">Add a specimen &rarr;</a><?php endif; ?>
     </div>
     <dl class="collection-facts">
         <div><dt>Specimens</dt><dd><?= (int)$collectionStats['total'] ?></dd></div>
@@ -94,7 +94,7 @@ try {
                 <div class="card-body"><div class="card-number">No. <?= e($recent['catalogue_no']) ?></div><h3><?= e($recent['name']) ?></h3><p><?= e($recent['summary']) ?></p></div>
                 <div class="card-foot"><span class="locality"><?= e($recent['locality']) ?></span><span class="price">₱<?= e(number_format((float)$recent['price'], 0)) ?></span></div>
             </a>
-            <div class="shop-actions"><a class="btn btn-small" href="<?= e($recentUrl) ?>">View details</a><a class="manage-link btn-small" href="edit-item.php?id=<?= (int)$recent['id'] ?>">Edit</a></div>
+            <div class="shop-actions"><a class="btn btn-small" href="<?= e($recentUrl) ?>">View details</a><?php if (is_admin()): ?><a class="manage-link btn-small" href="edit-item.php?id=<?= (int)$recent['id'] ?>">Edit</a><?php endif; ?></div>
             </article>
         <?php endforeach; ?>
     </div>
@@ -139,7 +139,7 @@ try {
                         <div class="card-body"><div class="card-number">No. <?= e($item['catalogue_no']) ?></div><h3><?= e($item['name']) ?></h3><p><?= e($item['summary']) ?></p></div>
                         <div class="card-foot"><span class="locality"><?= e($item['locality']) ?></span><span class="price">₱<?= e(number_format((float)$item['price'], 0)) ?></span></div>
                     </a>
-                    <div class="shop-actions"><a class="btn btn-small" href="<?= e($detailUrl) ?>">View details</a><a class="manage-link btn-small" href="edit-item.php?id=<?= (int)$item['id'] ?>">Edit</a></div>
+                    <div class="shop-actions"><a class="btn btn-small" href="<?= e($detailUrl) ?>">View details</a><?php if (is_admin()): ?><a class="manage-link btn-small" href="edit-item.php?id=<?= (int)$item['id'] ?>">Edit</a><?php endif; ?></div>
                     </article>
                     <?php endforeach; ?>
                 </div>
@@ -148,7 +148,7 @@ try {
     </section>
 </main>
 <footer class="site-footer">
-    <div class="footer-content"><div class="footer-brand"><h3>Terra Cabinet</h3><p>A small, hand-catalogued mineral collection.</p></div><nav class="footer-nav"><a href="index.php" aria-current="page">Home</a><a href="about.php">About</a><a href="contact.php">Contact</a><a href="add-item.php">Add a specimen</a></nav></div>
+    <div class="footer-content"><div class="footer-brand"><h3>Terra Cabinet</h3><p>A small, hand-catalogued mineral collection.</p></div><nav class="footer-nav"><a href="index.php" aria-current="page">Home</a><a href="about.php">About</a><a href="contact.php">Contact</a><?php if (is_admin()): ?><a href="add-item.php">Add a specimen</a><?php else: ?><a href="login.php">Admin login</a><?php endif; ?></nav></div>
     <p class="footer-note">&copy; <?= date('Y') ?> Terra Cabinet.</p>
 </footer>
 </body>

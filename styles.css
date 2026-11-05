@@ -978,3 +978,6 @@ img, svg {
   .shop-actions { grid-template-columns: 1fr; gap: 0.25rem; }
   .shop-actions .btn-small { padding-left: 0.2rem; padding-right: 0.2rem; font-size: 0.8rem; }
 }
+
+.nav-action { appearance: none; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.nav-action:hover { color: var(--accent, #d7ae76); }
