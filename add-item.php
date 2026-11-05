@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Add a specimen | Terra Cabinet</title><link rel="stylesheet" href="styles.css"></head><body>
-<header class="site-header"><a class="logo" href="index.php">Terra Cabinet</a><nav><ul><li><a href="index.php">Home</a></li><li><a href="about.php">About</a></li><li><a href="contact.php">Contact</a></li><li><a href="add-item.php" aria-current="page">Add a specimen</a></li></ul></nav></header>
+<?php require (__DIR__ . '/includes/header.php'); ?>
 <main><section class="page-content add-form-page">
     <span class="kicker">Grow the collection</span><h1>Add a specimen</h1>
     <p>Enter the specimen details and upload a photo. Images are automatically center-cropped to fit the 4:3 collection format.</p>
@@ -102,4 +102,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button class="btn" type="submit">Save specimen</button>
     </form>
 </section></main>
-<footer class="site-footer"><div class="footer-content"><div class="footer-brand"><h3>Terra Cabinet</h3><p>A small, hand-catalogued mineral collection.</p></div><nav class="footer-nav"><a href="index.php">Home</a><a href="about.php">About</a><a href="contact.php">Contact</a><a href="add-item.php" aria-current="page">Add a specimen</a></nav></div><p class="footer-note">&copy; <?= date('Y') ?> Terra Cabinet. Built for ITWM132.</p></footer><script src="image-optimizer.js" defer></script></body></html>
+<?php require (__DIR__ . '/includes/footer.php'); ?><script src="image-optimizer.js" defer></script></body></html>
+

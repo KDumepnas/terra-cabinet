@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Edit <?= e((string)$original['name']) ?> | Terra Cabinet</title><link rel="stylesheet" href="styles.css"></head><body>
-<header class="site-header"><a class="logo" href="index.php">Terra Cabinet</a><nav><ul><li><a href="index.php">Home</a></li><li><a href="about.php">About</a></li><li><a href="contact.php">Contact</a></li><li><a href="add-item.php">Add a specimen</a></li></ul></nav></header>
+<?php require (__DIR__ . '/includes/header.php'); ?>
 <main><section class="page-content add-form-page"><span class="kicker">Catalogue management</span><h1>Edit a specimen</h1><p>Change the specimen details below, then save your updates. Upload a replacement image only if you want to change the current photo; it will be cropped to the same 4:3 format as the others.</p><?php foreach ($errors as $error): ?><p class="form-error"><?= e($error) ?></p><?php endforeach; ?>
 <form class="specimen-form" method="post" enctype="multipart/form-data"><input type="hidden" name="id" value="<?= (int)$id ?>"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
 <label>Name *<input name="name" required maxlength="150" value="<?= e((string)$item['name']) ?>"></label>
@@ -106,4 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <label>Price (₱) *<input type="number" name="price" min="0" step="0.01" required value="<?= e((string)$item['price']) ?>"></label>
 <p class="current-image">Current image: <img src="<?= e(ltrim((string)$original['image'], '/')) ?>" alt="<?= e((string)$original['name']) ?>"></p>
 <label>Replace image (optional; JPG, PNG, WEBP, GIF; max 5 MB)<input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif"></label>
-<button class="btn" type="submit">Update specimen</button> <a class="manage-link" href="detail.php?slug=<?= rawurlencode((string)$original['slug']) ?>">Cancel</a></form></section></main><script src="image-optimizer.js" defer></script></body></html>
+<button class="btn" type="submit">Update specimen</button> <a class="manage-link" href="detail.php?slug=<?= rawurlencode((string)$original['slug']) ?>">Cancel</a></form></section></main>
+<?php require (__DIR__ . '/includes/footer.php'); ?><script src="image-optimizer.js" defer></script></body></html>
+
+

@@ -10,25 +10,18 @@ $categoryStmt = db()->prepare('SELECT c.name FROM ' . CATEGORY_TABLE . ' c INNER
 $categoryStmt->execute([(int)$item['id']]);
 $itemCategories = $categoryStmt->fetchAll(PDO::FETCH_COLUMN);
 $pageTitle = $item['name'];
+$rootPrefix = '../';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="Terra Cabinet specimen catalogue and mineral collection.">
   <title><?= e($pageTitle) ?> | Terra Cabinet</title>
   <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
-  <header class="site-header">
-    <a class="logo" href="../index.php">Terra Cabinet</a>
-    <nav><ul>
-      <li><a href="../index.php">Home</a></li>
-      <li><a href="../about.php">About</a></li>
-      <li><a href="../contact.php">Contact</a></li>
-      <li><a href="../add-item.php">Add a specimen</a></li>
-    </ul></nav>
-  </header>
+  <?php require (dirname(__DIR__) . '/includes/header.php'); ?>
   <main>
     <section class="specimen-detail">
       <a href="../index.php" class="back-link">&larr; Back to collection</a>
@@ -50,12 +43,8 @@ $pageTitle = $item['name'];
       </div>
     </section>
   </main>
-  <footer class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand"><h3>Terra Cabinet</h3><p>A small, hand-catalogued mineral collection.</p></div>
-      <nav class="footer-nav"><a href="../index.php">Home</a><a href="../about.php">About</a><a href="../contact.php">Contact</a></nav>
-    </div>
-    <p class="footer-note">&copy; <?= date('Y') ?> Terra Cabinet. Built for ITWM132.</p>
-  </footer>
+  <?php require (dirname(__DIR__) . '/includes/footer.php'); ?>
 </body>
 </html>
+
+

@@ -45,7 +45,7 @@ try {
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="site-header"><a class="logo" href="index.php">Terra Cabinet</a><nav><ul><li><a href="index.php" aria-current="page">Home</a></li><li><a href="about.php">About</a></li><li><a href="contact.php">Contact</a></li><?php if (is_admin()): ?><li><a href="add-item.php">Add a specimen</a></li><li><form method="post" action="logout.php"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><button class="nav-action" type="submit">Log out</button></form></li><?php else: ?><li><a href="login.php">Admin login</a></li><?php endif; ?></ul></nav></header>
+<?php require (__DIR__ . '/includes/header.php'); ?>
 <section class="hero">
     <div class="hero-grid">
         <div class="hero-copy">
@@ -148,9 +148,7 @@ try {
         <?php endforeach; ?>
     </section>
 </main>
-<footer class="site-footer">
-    <div class="footer-content"><div class="footer-brand"><h3>Terra Cabinet</h3><p>A small, hand-catalogued mineral collection.</p></div><nav class="footer-nav"><a href="index.php" aria-current="page">Home</a><a href="about.php">About</a><a href="contact.php">Contact</a><?php if (is_admin()): ?><a href="add-item.php">Add a specimen</a><?php else: ?><a href="login.php">Admin login</a><?php endif; ?></nav></div>
-    <p class="footer-note">&copy; <?= date('Y') ?> Terra Cabinet.</p>
-</footer>
+<?php require (__DIR__ . '/includes/footer.php'); ?>
 </body>
 </html>
+
