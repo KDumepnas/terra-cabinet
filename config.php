@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
 // Set these environment variables on the web host. Keep real credentials out of source control.
 $dbHost = getenv('DB_HOST') ?: 'localhost';
 $dbPort = getenv('DB_PORT') ?: '3307';
@@ -147,3 +150,9 @@ function take_flash(): ?array
     unset($_SESSION['flash']);
     return is_array($flash) ? $flash : null;
 }
+
+set_exception_handler(static function (Throwable $error): void {
+    error_log('Terra Cabinet uncaught error: ' . $error);
+    if (!headers_sent()) http_response_code(500);
+    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Something went wrong | Terra Cabinet</title><link rel="stylesheet" href="styles.css"></head><body><main class="page-content"><section class="error-panel"><p class="kicker">Terra Cabinet</p><h1>We could not complete that request.</h1><p>Please try again later or return to the collection.</p><a class="btn" href="index.php">Return to the collection</a></section></main></body></html>';
+});

@@ -29,9 +29,10 @@ try {
         $recentItems = db()->query('SELECT * FROM `' . SPECIMEN_TABLE . '` ORDER BY created_at DESC, id DESC LIMIT 3')->fetchAll();
     }
 } catch (Throwable $error) {
+    error_log('Terra Cabinet catalogue query error: ' . $error->getMessage());
     http_response_code(500);
     $items = [];
-    $dbError = $error->getMessage();
+    $dbError = true;
 }
 ?>
 <!DOCTYPE html>
@@ -125,7 +126,7 @@ try {
             <?php if ($query !== ''): ?><a class="link-arrow" href="index.php">Clear search</a><?php endif; ?>
         </form>
         <?php if ($query !== '' && !isset($dbError)): ?><p class="result-count"><?= count($items) ?> specimen<?= count($items) === 1 ? '' : 's' ?> found</p><?php endif; ?>
-        <?php if (isset($dbError)): ?><p class="form-error">Database connection failed. Check the server configuration and import database.sql. Details: <?= e($dbError) ?></p><?php endif; ?>
+        <?php if (isset($dbError)): ?><p class="form-error">The catalogue is temporarily unavailable. Please try again later.</p><?php endif; ?>
         <?php if (!$items && !isset($dbError)): ?><p>No specimens matched your search.</p><?php endif; ?>
         <?php foreach (($groups ?? []) as $category => $groupItems): ?>
             <section class="collection-group">

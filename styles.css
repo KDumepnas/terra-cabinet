@@ -981,3 +981,6 @@ img, svg {
 
 .nav-action { appearance: none; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .nav-action:hover { color: var(--accent, #d7ae76); }
+
+.error-panel { max-width: 48rem; margin: clamp(3rem, 10vh, 8rem) auto; padding: clamp(1.5rem, 4vw, 3rem); border: 1px solid var(--rule); background: var(--baize-deep); }
+.error-panel h1 { margin-top: .25rem; }

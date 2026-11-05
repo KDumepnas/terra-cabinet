@@ -1,4 +1,9 @@
 # Cache the site's own static files to reduce repeat visits' transfer time.
+<IfModule mod_php.c>
+  php_flag display_errors Off
+  php_flag log_errors On
+</IfModule>
+
 <IfModule mod_expires.c>
   ExpiresActive On
   ExpiresByType image/jpeg "access plus 1 month"
