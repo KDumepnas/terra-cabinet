@@ -782,6 +782,17 @@ img, svg {
 .collection-group { margin: 1.5rem 0 2rem; }
 .collection-group > h3 { margin-bottom: 1rem; }
 .form-error { padding: 0.85rem 1rem; border-left: 3px solid #a74336; background: #faeeeb; color: #6e241b; }
+.form-success { padding: 0.85rem 1rem; border-left: 3px solid #567b4c; background: #edf4e9; color: #294421; }
+.category-choices { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; border: 1px solid var(--rule); padding: 0.85rem 1rem; }
+.category-choices legend { padding: 0 0.35rem; font-weight: 600; }
+.specimen-form .category-choices label { display: inline-flex; grid-template-columns: auto 1fr; align-items: center; gap: 0.4rem; font-weight: 400; }
+.specimen-form .category-choices input[type="checkbox"] { width: auto; accent-color: var(--brass); }
+.category-list { max-width: 42rem; margin: 1rem 0 1.5rem; list-style: none; }
+.category-list li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; border-bottom: 1px solid var(--rule); padding: 0.7rem 0; }
+.category-list form { margin: 0; }
+.detail-category-list { display: grid; gap: 0.4rem; list-style: none; }
+.detail-category-list li { display: flex; align-items: center; gap: 0.65rem; }
+.detail-category-list form { margin: 0; }
 .specimen-form { display: grid; gap: 1rem; max-width: 42rem; margin-top: 1.5rem; }
 .specimen-form label { display: grid; gap: 0.4rem; font-weight: 600; }
 .specimen-form input, .specimen-form select, .specimen-form textarea,
@@ -870,6 +881,99 @@ img, svg {
 .current-image { color: var(--text-dim); }
 .current-image img { display: block; width: min(100%, 18rem); aspect-ratio: 4 / 3; margin-top: 0.5rem; object-fit: cover; border: 1px solid var(--rule); }
 .specimen-detail .btn { margin-top: 0.5rem; }
+
+/* Specimen detail: balanced gallery and a clear, compact information panel. */
+.specimen-detail {
+  width: min(100%, 1440px);
+  max-width: none;
+  padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1.25rem, 4vw, 3.5rem) 4rem;
+}
+.specimen-detail .back-link {
+  margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
+  text-decoration: none;
+}
+.specimen-detail .back-link:hover { color: var(--text); }
+.detail-grid {
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  gap: clamp(1.5rem, 3.5vw, 3.25rem);
+  align-items: start;
+}
+.detail-image {
+  max-width: none;
+  aspect-ratio: 1.02 / 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(215, 174, 118, 0.22);
+  border-radius: 8px;
+  background: radial-gradient(ellipse at 50% 42%, #28342b 0%, #17211b 68%, #101812 100%);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.22);
+}
+.detail-image img,
+.detail-image svg { object-fit: contain; }
+.detail-info {
+  min-width: 0;
+  padding: clamp(1.25rem, 2.3vw, 2rem);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.025), rgba(16,24,18,0.32));
+}
+.detail-info h1 { font-size: clamp(2rem, 3vw, 2.7rem); }
+.detail-info .price { margin-bottom: 1.25rem; }
+.detail-info .description { max-width: 62ch; margin-bottom: 1.5rem; }
+.specs { margin-bottom: 1.5rem; }
+.spec-row { gap: 1rem; align-items: flex-start; padding: 0.9rem 0; }
+.spec-row dt { flex: 0 0 6.25rem; }
+.spec-row dd { flex: 1; min-width: 0; }
+.detail-category-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+.detail-category-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.22rem 0.3rem 0.22rem 0.7rem;
+  border: 1px solid rgba(215, 174, 118, 0.28);
+  border-radius: 999px;
+  background: rgba(215, 174, 118, 0.07);
+  font-size: 0.9rem;
+}
+.detail-category-list .manage-link {
+  padding: 0.15rem 0.4rem;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+.detail-category-list .delete-link { color: #e6aaa0; }
+.detail-info .spec-row dd > .manage-link {
+  display: inline-flex;
+  margin-top: 0.65rem;
+  font-size: 0.8rem;
+}
+.specimen-detail .btn {
+  min-height: 3.1rem;
+  padding: 0.8rem 1.4rem;
+  border-radius: 4px;
+}
+.detail-manage { gap: 0.65rem; margin-top: 1rem; }
+.detail-manage .manage-link { border-radius: 4px; }
+
+@media (max-width: 860px) {
+  .detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .detail-image { aspect-ratio: 4 / 3; }
+}
+@media (max-width: 600px) {
+  .specimen-detail { padding-top: 1.25rem; }
+  .detail-info { padding: 1.15rem; }
+  .spec-row { flex-direction: column; gap: 0.35rem; }
+  .spec-row dt { flex-basis: auto; }
+  .spec-row dd { width: 100%; text-align: left; }
+  .detail-category-list { justify-content: flex-start; }
+  .detail-manage { flex-wrap: wrap; }
+}
 @media (max-width: 540px) {
   .shop-actions { grid-template-columns: 1fr; gap: 0.25rem; }
   .shop-actions .btn-small { padding-left: 0.2rem; padding-right: 0.2rem; font-size: 0.8rem; }

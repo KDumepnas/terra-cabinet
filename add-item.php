@@ -1,91 +1,68 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/config.php';
+require __DIR__ . '/image-helper.php';
 $pageTitle = 'Add a specimen'; $rootPrefix = '';
+
+$categories = all_categories();
+$categoryIds = array_map('intval', (array)($_POST['categories'] ?? []));
+$limits = ['name' => 150, 'summary' => 255, 'formula' => 255, 'hardness' => 100, 'locality' => 150];
 $errors = [];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verify_csrf_token()) $errors[] = 'Your form session expired. Reload and try again.';
+
     $name = trim((string)($_POST['name'] ?? ''));
-    $category = trim((string)($_POST['category'] ?? ''));
     $summary = trim((string)($_POST['summary'] ?? ''));
     $description = trim((string)($_POST['description'] ?? ''));
     $formula = trim((string)($_POST['formula'] ?? ''));
     $hardness = trim((string)($_POST['hardness'] ?? ''));
     $locality = trim((string)($_POST['locality'] ?? ''));
     $price = filter_var($_POST['price'] ?? null, FILTER_VALIDATE_FLOAT);
-    if ($name === '' || $category === '' || $summary === '' || $description === '' || $locality === '') $errors[] = 'Fill in all required fields.';
-    if ($price === false || $price < 0) $errors[] = 'Enter a valid non-negative price.';
+
+    if ($name === '' || $summary === '' || $description === '' || $locality === '') $errors[] = 'Fill in all required fields.';
+    $checked = ['name' => $name, 'summary' => $summary, 'formula' => $formula, 'hardness' => $hardness, 'locality' => $locality];
+    foreach ($limits as $field => $max) {
+        if (mb_strlen($checked[$field]) > $max) $errors[] = ucfirst($field) . " must be $max characters or fewer.";
+    }
+    $validCategoryIds = array_column($categories, 'id');
+    if (!$categoryIds || array_diff($categoryIds, array_map('intval', $validCategoryIds))) $errors[] = 'Choose at least one valid category.';
+    if ($price === false || $price < 0 || $price > 99999999) $errors[] = 'Enter a valid price (0 or more).';
+
+    // Photo: required when adding. Only processed once the rest of the form is valid.
     $imagePath = '';
     $file = $_FILES['image'] ?? null;
-    if (!$file || $file['error'] !== UPLOAD_ERR_OK) $errors[] = 'Choose an image to upload.';
-    if ($file && $file['error'] === UPLOAD_ERR_OK) {
-        if ($file['size'] > 5 * 1024 * 1024) $errors[] = 'Image must be 5 MB or smaller.';
-        $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
-        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
-        if (!isset($extensions[$mime])) $errors[] = 'Upload a JPG, PNG, WEBP, or GIF image.';
-        if (!$errors) {
-            $uploadDir = __DIR__ . '/uploads';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-            $filename = bin2hex(random_bytes(16)) . '.jpg';
-            $targetPath = $uploadDir . '/' . $filename;
-
-            // Center-crop uploads to the site's 4:3 specimen frame, then
-            // resize and compress them for consistent display and quick loading.
-            $source = false;
-            if (function_exists('imagecreatetruecolor')) {
-                if ($mime === 'image/jpeg' && function_exists('imagecreatefromjpeg')) $source = @imagecreatefromjpeg($file['tmp_name']);
-                elseif ($mime === 'image/png' && function_exists('imagecreatefrompng')) $source = @imagecreatefrompng($file['tmp_name']);
-                elseif ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) $source = @imagecreatefromwebp($file['tmp_name']);
-                elseif ($mime === 'image/gif' && function_exists('imagecreatefromgif')) $source = @imagecreatefromgif($file['tmp_name']);
-            }
-
-            if ($source) {
-                $sourceWidth = imagesx($source);
-                $sourceHeight = imagesy($source);
-                $targetRatio = 4 / 3;
-                $sourceRatio = $sourceWidth / max(1, $sourceHeight);
-                if ($sourceRatio > $targetRatio) {
-                    $cropHeight = $sourceHeight;
-                    $cropWidth = (int)round($sourceHeight * $targetRatio);
-                    $cropX = (int)(($sourceWidth - $cropWidth) / 2);
-                    $cropY = 0;
-                } else {
-                    $cropWidth = $sourceWidth;
-                    $cropHeight = (int)round($sourceWidth / $targetRatio);
-                    $cropX = 0;
-                    $cropY = (int)(($sourceHeight - $cropHeight) / 2);
-                }
-                $scale = min(1, 1200 / $cropWidth, 900 / $cropHeight);
-                $width = max(1, (int)round($cropWidth * $scale));
-                $height = max(1, (int)round($cropHeight * $scale));
-                $resized = imagecreatetruecolor($width, $height);
-                $white = imagecolorallocate($resized, 255, 255, 255);
-                imagefill($resized, 0, 0, $white);
-                $saved = imagecopyresampled($resized, $source, 0, 0, $cropX, $cropY, $width, $height, $cropWidth, $cropHeight)
-                    && imagejpeg($resized, $targetPath, 84);
-                imagedestroy($source);
-                imagedestroy($resized);
-                if (!$saved) $errors[] = 'The image could not be resized and saved.';
-                else $imagePath = 'uploads/' . $filename;
-            } else {
-                // If GD is unavailable, retain the original supported image.
-                $filename = bin2hex(random_bytes(16)) . '.' . $extensions[$mime];
-                if (!move_uploaded_file($file['tmp_name'], $uploadDir . '/' . $filename)) $errors[] = 'The image could not be saved.';
-                else $imagePath = 'uploads/' . $filename;
-            }
-        }
+    if (!$file || $file['error'] === UPLOAD_ERR_NO_FILE) {
+        $errors[] = 'Choose an image to upload.';
+    } elseif (!$errors) {
+        $result = save_specimen_image($file);
+        if (isset($result['error'])) $errors[] = $result['error'];
+        else $imagePath = $result['path'];
     }
+
     if (!$errors) {
+        $pdo = null;
         try {
-            $slugBase = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $name), '-')) ?: 'specimen';
+            $slugBase = strtolower(trim((string)preg_replace('/[^a-z0-9]+/i', '-', $name), '-')) ?: 'specimen';
             $slug = $slugBase;
             $check = db()->prepare('SELECT COUNT(*) FROM `' . SPECIMEN_TABLE . '` WHERE slug = ?');
             for ($suffix = 2; ; $suffix++) { $check->execute([$slug]); if ((int)$check->fetchColumn() === 0) break; $slug = $slugBase . '-' . $suffix; }
             $next = (int)db()->query('SELECT COALESCE(MAX(id), 0) + 1 FROM `' . SPECIMEN_TABLE . '`')->fetchColumn();
             $catalogueNo = str_pad((string)$next, 3, '0', STR_PAD_LEFT);
-            $insert = db()->prepare('INSERT INTO `' . SPECIMEN_TABLE . '` (catalogue_no,slug,name,category,summary,description,formula,hardness,locality,price,image) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
-            $insert->execute([$catalogueNo,$slug,$name,$category,$summary,$description,$formula,$hardness,$locality,$price,$imagePath]);
+            $pdo = db();
+            $pdo->beginTransaction();
+            $insert = $pdo->prepare('INSERT INTO `' . SPECIMEN_TABLE . '` (catalogue_no,slug,name,summary,description,formula,hardness,locality,price,image) VALUES (?,?,?,?,?,?,?,?,?,?)');
+            $insert->execute([$catalogueNo,$slug,$name,$summary,$description,$formula,$hardness,$locality,$price,$imagePath]);
+            save_specimen_categories((int)$pdo->lastInsertId(), $categoryIds);
+            $pdo->commit();
             header('Location: detail.php?slug=' . rawurlencode($slug), true, 303); exit;
-        } catch (Throwable $error) { $errors[] = 'Could not save the specimen. Check the database setup and try again.'; }
+        } catch (Throwable $error) {
+            error_log('Terra Cabinet add error: ' . $error->getMessage());
+            if ($pdo instanceof PDO && $pdo->inTransaction()) $pdo->rollBack();
+            // Don't leave an orphaned photo behind when the database save fails.
+            if ($imagePath !== '') @unlink(__DIR__ . '/' . $imagePath);
+            $errors[] = 'Could not save the specimen. Check the database setup and try again.';
+        }
     }
 }
 ?>
@@ -97,8 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p>Enter the specimen details and upload a photo. Images are automatically center-cropped to fit the 4:3 collection format.</p>
     <?php foreach ($errors as $error): ?><p class="form-error"><?= e($error) ?></p><?php endforeach; ?>
     <form class="specimen-form" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <label>Name *<input name="name" required maxlength="150" value="<?= e($_POST['name'] ?? '') ?>"></label>
-        <label>Category *<select name="category" required><?php foreach (['Quartz Family','Raw & Rough','Tumbled & Polished','Other'] as $option): ?><option value="<?= e($option) ?>" <?= ($_POST['category'] ?? 'Quartz Family') === $option ? 'selected' : '' ?>><?= e($option) ?></option><?php endforeach; ?></select></label>
+        <fieldset class="category-choices"><legend>Categories *</legend><?php foreach ($categories as $category): ?><label><input type="checkbox" name="categories[]" value="<?= (int)$category['id'] ?>" <?= in_array((int)$category['id'], $categoryIds, true) ? 'checked' : '' ?>> <?= e($category['name']) ?></label><?php endforeach; ?><a class="manage-link" href="manage-categories.php">Manage categories</a></fieldset>
         <label>Short summary *<input name="summary" required maxlength="255" value="<?= e($_POST['summary'] ?? '') ?>"></label>
         <label>Description *<textarea name="description" rows="5" required><?= e($_POST['description'] ?? '') ?></textarea></label>
         <label>Formula<input name="formula" maxlength="255" value="<?= e($_POST['formula'] ?? '') ?>"></label>

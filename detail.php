@@ -6,6 +6,9 @@ $stmt = db()->prepare('SELECT * FROM `' . SPECIMEN_TABLE . '` WHERE slug = ? LIM
 $stmt->execute([$slug]);
 $item = $stmt->fetch();
 if (!$item) { http_response_code(404); exit('Specimen not found.'); }
+$categoryStmt = db()->prepare('SELECT c.id, c.name FROM `' . CATEGORY_TABLE . '` c INNER JOIN `' . SPECIMEN_CATEGORY_TABLE . '` sc ON sc.category_id = c.id WHERE sc.specimen_id = ? ORDER BY c.name');
+$categoryStmt->execute([(int)$item['id']]);
+$itemCategories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,7 +33,7 @@ if (!$item) { http_response_code(404); exit('Specimen not found.'); }
             <span class="price">₱<?= e(number_format((float)$item['price'], 0)) ?></span>
             <p class="description"><?= e($item['description']) ?></p>
             <dl class="specs">
-                <div class="spec-row"><dt>Category</dt><dd><?= e($item['category']) ?></dd></div>
+                <div class="spec-row"><dt>Categories</dt><dd><ul class="detail-category-list"><?php foreach ($itemCategories as $category): ?><li><span><?= e($category['name']) ?></span><form method="post" action="remove-category-link.php"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="specimen_id" value="<?= (int)$item['id'] ?>"><input type="hidden" name="category_id" value="<?= (int)$category['id'] ?>"><button class="manage-link delete-link" type="submit" aria-label="Remove <?= e($category['name']) ?> from this specimen">Remove</button></form></li><?php endforeach; ?></ul><a class="manage-link" href="edit-item.php?id=<?= (int)$item['id'] ?>">Assign categories</a></dd></div>
                 <div class="spec-row"><dt>Formula</dt><dd><?= e($item['formula']) ?></dd></div>
                 <div class="spec-row"><dt>Hardness</dt><dd><?= e($item['hardness']) ?></dd></div>
                 <div class="spec-row"><dt>Locality</dt><dd><?= e($item['locality']) ?></dd></div>

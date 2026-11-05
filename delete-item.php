@@ -8,6 +8,8 @@ $find = db()->prepare('SELECT image FROM `' . SPECIMEN_TABLE . '` WHERE id = ?')
 $find->execute([$id]);
 $item = $find->fetch();
 if ($item) {
+    $unlink = db()->prepare('DELETE FROM `' . SPECIMEN_CATEGORY_TABLE . '` WHERE specimen_id = ?');
+    $unlink->execute([$id]);
     $delete = db()->prepare('DELETE FROM `' . SPECIMEN_TABLE . '` WHERE id = ?');
     $delete->execute([$id]);
     $image = realpath(__DIR__ . '/' . ltrim($item['image'], '/'));

@@ -22,6 +22,31 @@ if (!preg_match('/^[A-Za-z0-9]+$/', $studentId)) {
 }
 
 define('SPECIMEN_TABLE', $studentId . '_specimens');
+define('CATEGORY_TABLE', 'tc_categories');
+define('SPECIMEN_CATEGORY_TABLE', 'tc_specimen_categories');
+
+function all_categories(): array
+{
+    return db()->query('SELECT id, name FROM `' . CATEGORY_TABLE . '` ORDER BY name')->fetchAll();
+}
+
+function specimen_category_ids(int $specimenId): array
+{
+    $stmt = db()->prepare('SELECT category_id FROM `' . SPECIMEN_CATEGORY_TABLE . '` WHERE specimen_id = ?');
+    $stmt->execute([$specimenId]);
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
+function save_specimen_categories(int $specimenId, array $categoryIds): void
+{
+    $pdo = db();
+    $delete = $pdo->prepare('DELETE FROM `' . SPECIMEN_CATEGORY_TABLE . '` WHERE specimen_id = ?');
+    $delete->execute([$specimenId]);
+    $insert = $pdo->prepare('INSERT INTO `' . SPECIMEN_CATEGORY_TABLE . '` (specimen_id, category_id) VALUES (?, ?)');
+    foreach (array_unique(array_map('intval', $categoryIds)) as $categoryId) {
+        $insert->execute([$specimenId, $categoryId]);
+    }
+}
 
 function db(): PDO
 {

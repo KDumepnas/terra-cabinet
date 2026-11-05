@@ -2,27 +2,29 @@
 declare(strict_types=1);
 require __DIR__ . '/config.php';
 $query = trim((string)($_GET['q'] ?? ''));
+$deleted = isset($_GET['deleted']);
 $pageTitle = 'Mineral & Crystal Specimens';
 $rootPrefix = '';
-$sql = 'SELECT * FROM `' . SPECIMEN_TABLE . '`';
+$sql = 'SELECT s.*, GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR "||") AS category_names FROM `' . SPECIMEN_TABLE . '` s LEFT JOIN `' . SPECIMEN_CATEGORY_TABLE . '` sc ON sc.specimen_id = s.id LEFT JOIN `' . CATEGORY_TABLE . '` c ON c.id = sc.category_id';
 if ($query !== '') {
-    $sql .= ' WHERE name LIKE :q0 OR summary LIKE :q1 OR description LIKE :q2 OR category LIKE :q3 OR locality LIKE :q4';
+    $sql .= ' WHERE s.name LIKE :q0 OR s.summary LIKE :q1 OR s.description LIKE :q2 OR c.name LIKE :q3 OR s.locality LIKE :q4 OR s.formula LIKE :q5';
 }
-$sql .= ' ORDER BY catalogue_no, id';
+$sql .= ' GROUP BY s.id ORDER BY s.catalogue_no, s.id';
 try {
     $stmt = db()->prepare($sql);
     $like = '%' . $query . '%';
-    $stmt->execute($query !== '' ? [':q0' => $like, ':q1' => $like, ':q2' => $like, ':q3' => $like, ':q4' => $like] : []);
+    $stmt->execute($query !== '' ? [':q0' => $like, ':q1' => $like, ':q2' => $like, ':q3' => $like, ':q4' => $like, ':q5' => $like] : []);
     $items = $stmt->fetchAll();
     $groups = [];
     foreach ($items as $item) {
-        $groups[$item['category']][] = $item;
+        $itemCategories = $item['category_names'] ? explode('||', $item['category_names']) : ['Uncategorised'];
+        foreach ($itemCategories as $categoryName) $groups[$categoryName][] = $item;
     }
     $featured = null;
     $recentItems = [];
     $collectionStats = ['total' => 0, 'categories' => 0];
     if ($query === '') {
-        $collectionStats = db()->query('SELECT COUNT(*) AS total, COUNT(DISTINCT category) AS categories FROM `' . SPECIMEN_TABLE . '`')->fetch();
+        $collectionStats = db()->query('SELECT COUNT(*) AS total, (SELECT COUNT(*) FROM `' . CATEGORY_TABLE . '`) AS categories FROM `' . SPECIMEN_TABLE . '`')->fetch();
         $featured = db()->query('SELECT * FROM `' . SPECIMEN_TABLE . '` ORDER BY id ASC LIMIT 1')->fetch() ?: null;
         $recentItems = db()->query('SELECT * FROM `' . SPECIMEN_TABLE . '` ORDER BY created_at DESC, id DESC LIMIT 3')->fetchAll();
     }
@@ -70,7 +72,7 @@ try {
 <section class="spotlight" aria-labelledby="featured-title">
     <div class="section-kicker">From the cabinet</div>
     <div class="featured-card">
-        <?php $featuredUrl = is_file(__DIR__ . '/specimens/' . $featured['slug'] . '.php') ? 'specimens/' . rawurlencode($featured['slug']) . '.php' : 'detail.php?slug=' . rawurlencode($featured['slug']); ?>
+        <?php $featuredUrl = 'detail.php?slug=' . rawurlencode($featured['slug']); ?>
         <a class="featured-image" href="<?= e($featuredUrl) ?>"><img src="<?= e($featured['image']) ?>" alt="<?= e($featured['name']) ?>" fetchpriority="high" decoding="async"></a>
         <div class="featured-copy">
             <p class="eyebrow">Featured specimen · No. <?= e($featured['catalogue_no']) ?></p>
@@ -85,7 +87,7 @@ try {
     <div class="section-heading"><div><p class="eyebrow">Fresh from the ledger</p><h2 id="recent-title">Recently added</h2></div><a class="link-arrow" href="#collection">Browse all specimens &rarr;</a></div>
     <div class="drawer-grid recent-grid">
         <?php foreach ($recentItems as $recent): ?>
-            <?php $recentUrl = is_file(__DIR__ . '/specimens/' . $recent['slug'] . '.php') ? 'specimens/' . rawurlencode($recent['slug']) . '.php' : 'detail.php?slug=' . rawurlencode($recent['slug']); ?>
+            <?php $recentUrl = 'detail.php?slug=' . rawurlencode($recent['slug']); ?>
             <article class="shop-card">
             <a href="<?= e($recentUrl) ?>" class="specimen-card">
                 <div class="card-image"><img src="<?= e($recent['image']) ?>" alt="<?= e($recent['name']) ?>" loading="lazy"></div>
@@ -98,16 +100,31 @@ try {
     </div>
 </section>
 <?php endif; ?>
+<section class="collection-intro" aria-labelledby="tips-title">
+    <div class="intro-copy">
+        <p class="eyebrow">Collector's notes</p>
+        <h2 id="tips-title">Getting to know your stones</h2>
+        <p>Hardness is measured on the Mohs scale from 1 to 10, and quartz sits at 7. Keep harder stones apart from softer ones so they don't scratch each other, and keep soft minerals like selenite dry. Some stones, such as amethyst, can fade if left in strong sunlight.</p>
+        <p>Always check a specimen's locality: where a stone formed says a lot about how it formed.</p>
+    </div>
+    <dl class="collection-facts">
+        <div><dt>Hardness</dt><dd>Mohs 1–10</dd></div>
+        <div><dt>Storage</dt><dd>Keep apart</dd></div>
+        <div><dt>Light</dt><dd>Avoid strong sun</dd></div>
+    </dl>
+</section>
 <?php endif; ?>
 <main id="collection">
     <section class="drawer">
         <div class="drawer-head"><h2><?= $query !== '' ? 'Search results' : 'The Collection' ?></h2><p><?= $query !== '' ? 'Results for “' . e($query) . '”' : 'Search the catalogue or explore the specimens below.' ?></p></div>
+        <?php if ($deleted): ?><p class="deleted-notice" role="status" style="padding:.75rem 1rem;border:1px solid currentColor;border-radius:6px;">The specimen was deleted from the catalogue.</p><?php endif; ?>
         <form class="search-form" action="index.php" method="get" role="search">
             <label for="q">Search specimens</label>
-            <input id="q" name="q" type="search" value="<?= e($query) ?>" placeholder="Name, mineral, or locality">
+            <input id="q" name="q" type="search" value="<?= e($query) ?>" placeholder="Name, mineral, formula, or locality">
             <button class="btn" type="submit">Search</button>
             <?php if ($query !== ''): ?><a class="link-arrow" href="index.php">Clear search</a><?php endif; ?>
         </form>
+        <?php if ($query !== '' && !isset($dbError)): ?><p class="result-count"><?= count($items) ?> specimen<?= count($items) === 1 ? '' : 's' ?> found</p><?php endif; ?>
         <?php if (isset($dbError)): ?><p class="form-error">Database connection failed. Check the server configuration and import database.sql. Details: <?= e($dbError) ?></p><?php endif; ?>
         <?php if (!$items && !isset($dbError)): ?><p>No specimens matched your search.</p><?php endif; ?>
         <?php foreach (($groups ?? []) as $category => $groupItems): ?>
@@ -115,7 +132,7 @@ try {
                 <h3><?= e($category) ?></h3>
                 <div class="drawer-grid">
                     <?php foreach ($groupItems as $item): ?>
-                    <?php $detailUrl = is_file(__DIR__ . '/specimens/' . $item['slug'] . '.php') ? 'specimens/' . rawurlencode($item['slug']) . '.php' : 'detail.php?slug=' . rawurlencode($item['slug']); ?>
+                    <?php $detailUrl = 'detail.php?slug=' . rawurlencode($item['slug']); ?>
                     <article class="shop-card">
                     <a href="<?= e($detailUrl) ?>" class="specimen-card">
                         <div class="card-image"><img src="<?= e($item['image']) ?>" alt="<?= e($item['name']) ?>" loading="lazy"></div>

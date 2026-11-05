@@ -18,7 +18,25 @@ $items = [
     ['012','labradorite','Labradorite Palm Stone','Tumbled & Polished','Grey feldspar with a shifting blue-green flash',"Labradorite's flash, called labradorescence, comes from light bending across microscopic layers inside the feldspar rather than any pigment in the stone. Shaped into a palm stone, this piece needs to be tilted in the hand to catch the blue-green flash across its surface.",'(Ca,Na)(Al,Si)₄O₈ (Plagioclase Feldspar)','6-6.5 (Mohs scale)','Antananarivo, Madagascar',650,'images/labradorite.jpg'],
 ];
 
-$sql = 'INSERT IGNORE INTO `' . SPECIMEN_TABLE . '` (catalogue_no,slug,name,category,summary,description,formula,hardness,locality,price,image) VALUES (?,?,?,?,?,?,?,?,?,?,?)';
+$categoryNames = ['Quartz Family', 'Raw & Rough', 'Tumbled & Polished', 'Other'];
+$createCategory = db()->prepare('INSERT IGNORE INTO `' . CATEGORY_TABLE . '` (name) VALUES (?)');
+foreach ($categoryNames as $categoryName) $createCategory->execute([$categoryName]);
+$categoryIds = [];
+foreach (all_categories() as $category) $categoryIds[$category['name']] = (int)$category['id'];
+$sql = 'INSERT IGNORE INTO `' . SPECIMEN_TABLE . '` (catalogue_no,slug,name,summary,description,formula,hardness,locality,price,image) VALUES (?,?,?,?,?,?,?,?,?,?)';
 $stmt = db()->prepare($sql);
-foreach ($items as $item) $stmt->execute($item);
+foreach ($items as $item) {
+    $legacyCategory = $item[3];
+    $categoriesForItem = [$legacyCategory];
+    if ($legacyCategory === 'Quartz Family') {
+        $categoriesForItem[] = in_array($item[1], ['rose-quartz', 'tigers-eye', 'sodalite', 'labradorite'], true) ? 'Tumbled & Polished' : 'Raw & Rough';
+    }
+    $row = $item;
+    array_splice($row, 3, 1);
+    $stmt->execute($row);
+    $findId = db()->prepare('SELECT id FROM `' . SPECIMEN_TABLE . '` WHERE slug = ?');
+    $findId->execute([$item[1]]);
+    $specimenId = (int)$findId->fetchColumn();
+    save_specimen_categories($specimenId, array_map(static fn($name) => $categoryIds[$name], $categoriesForItem));
+}
 echo 'Seed complete. ' . count($items) . ' catalogue rows were checked.';
