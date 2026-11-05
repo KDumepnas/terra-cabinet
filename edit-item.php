@@ -6,11 +6,11 @@ require __DIR__ . '/hardness-helper.php';
 require __DIR__ . '/image-helper.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
-if (!$id) { http_response_code(400); exit('A valid specimen ID is required.'); }
+if (!$id) render_error_page(400, 'A valid specimen ID is required.');
 $find = db()->prepare('SELECT * FROM `' . SPECIMEN_TABLE . '` WHERE id = ?');
 $find->execute([$id]);
 $item = $find->fetch();
-if (!$item) { http_response_code(404); exit('Specimen not found.'); }
+if (!$item) render_error_page(404, 'That specimen could not be found.');
 $original = $item; // untouched copy: used for the current image, old slug, and cleanup
 
 $categories = all_categories();

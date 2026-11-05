@@ -4,14 +4,12 @@ require __DIR__ . '/config.php';
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf_token()) {
-    http_response_code(403);
-    exit('Request denied. Return to the specimen and try again.');
+    render_error_page(403, 'Request denied. Return to the specimen and try again.');
 }
 $specimenId = filter_input(INPUT_POST, 'specimen_id', FILTER_VALIDATE_INT);
 $categoryId = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
 if (!$specimenId || !$categoryId) {
-    http_response_code(400);
-    exit('A valid specimen and category are required.');
+    render_error_page(400, 'A valid specimen and category are required.');
 }
 $slugStmt = db()->prepare('SELECT slug FROM `' . SPECIMEN_TABLE . '` WHERE id = ?');
 $slugStmt->execute([$specimenId]);

@@ -2,8 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/config.php';
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verify_csrf_token()) {
-    http_response_code(403);
-    exit('Request denied.');
+    render_error_page(403, 'Request denied.');
 }
 $_SESSION = [];
 if (ini_get('session.use_cookies')) {

@@ -32,8 +32,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 if (!preg_match('/^[A-Za-z0-9]+$/', $studentId)) {
-    http_response_code(500);
-    exit('STUDENT_ID must contain only letters and numbers.');
+    render_error_page(500, 'The catalogue table prefix is not configured correctly.');
 }
 
 define('SPECIMEN_TABLE', $studentId . '_specimens');
@@ -110,7 +109,7 @@ function validated_next_path(?string $candidate): string
 {
     if (!is_string($candidate) || $candidate === '' || str_contains($candidate, '\\')) return 'index.php';
     $parts = parse_url($candidate);
-    if ($parts === false || isset($parts['scheme'], $parts['host'], $parts['user'], $parts['pass'], $parts['fragment'])) return 'index.php';
+    if ($parts === false || isset($parts['scheme']) || isset($parts['host']) || isset($parts['user']) || isset($parts['pass']) || isset($parts['fragment'])) return 'index.php';
     $path = $parts['path'] ?? '';
     $allowed = ['index.php', 'add-item.php', 'edit-item.php', 'manage-categories.php', 'seed.php', 'messages.php'];
     if (str_starts_with($path, '/') || str_contains($path, '..') || !in_array($path, $allowed, true)) return 'index.php';
@@ -151,8 +150,23 @@ function take_flash(): ?array
     return is_array($flash) ? $flash : null;
 }
 
+function render_error_page(int $status, string $message): void
+{
+    http_response_code($status);
+    $directory = str_replace('\\', '/', dirname((string)($_SERVER['SCRIPT_NAME'] ?? '/')));
+    $prefix = basename($directory) === 'specimens' ? '../' : '';
+    $title = match ($status) {
+        400 => 'Request could not be processed',
+        403 => 'Request denied',
+        404 => 'Page not found',
+        default => 'Something went wrong',
+    };
+    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Terra Cabinet catalogue"><title>' . e($title) . ' | Terra Cabinet</title><link rel="stylesheet" href="' . e($prefix) . 'styles.css"></head><body><main class="page-content"><section class="error-panel"><p class="kicker">Terra Cabinet</p><h1>' . e($title) . '</h1><p>' . e($message) . '</p><a class="btn" href="' . e($prefix) . 'index.php">Return to the collection</a></section></main></body></html>';
+    exit;
+}
+
 set_exception_handler(static function (Throwable $error): void {
     error_log('Terra Cabinet uncaught error: ' . $error);
-    if (!headers_sent()) http_response_code(500);
-    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Something went wrong | Terra Cabinet</title><link rel="stylesheet" href="styles.css"></head><body><main class="page-content"><section class="error-panel"><p class="kicker">Terra Cabinet</p><h1>We could not complete that request.</h1><p>Please try again later or return to the collection.</p><a class="btn" href="index.php">Return to the collection</a></section></main></body></html>';
+    if (headers_sent()) exit;
+    render_error_page(500, 'We could not complete that request. Please try again later.');
 });

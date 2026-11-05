@@ -5,7 +5,7 @@ $slug = 'smoky-quartz';
 $stmt = db()->prepare('SELECT * FROM `' . SPECIMEN_TABLE . '` WHERE slug = ? LIMIT 1');
 $stmt->execute([$slug]);
 $item = $stmt->fetch();
-if (!$item) { http_response_code(404); exit('Specimen not found. Import database.sql and run seed.php if this is an original specimen.'); }
+if (!$item) render_error_page(404, 'That specimen could not be found.');
 $categoryStmt = db()->prepare('SELECT c.name FROM ' . CATEGORY_TABLE . ' c INNER JOIN ' . SPECIMEN_CATEGORY_TABLE . ' sc ON sc.category_id = c.id WHERE sc.specimen_id = ? ORDER BY c.name');
 $categoryStmt->execute([(int)$item['id']]);
 $itemCategories = $categoryStmt->fetchAll(PDO::FETCH_COLUMN);
@@ -46,5 +46,7 @@ $rootPrefix = '../';
   <?php require (dirname(__DIR__) . '/includes/footer.php'); ?>
 </body>
 </html>
+
+
 
 
