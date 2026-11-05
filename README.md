@@ -1,15 +1,17 @@
 # Terra Cabinet
 
-A PHP specimen catalogue with search, detail pages, and image uploads.
-
 ## Database setup
 
-1. Create a MySQL database.
-2. Set `STUDENT_ID` to your assigned table prefix. Before a fresh install, replace `specimen_specimens` in `database.sql` with `<STUDENT_ID>_specimens`.
-3. Import `database.sql`. It creates the specimen table, categories, and the specimen-category junction table.
-4. Copy `config.local.example.php` to `config.local.php` on the server and enter the database connection details. Keep `config.local.php` private and out of source control.
-5. For an existing installation, back up the database and run `migration-m2m-categories.sql` in phpMyAdmin after replacing `specimen_specimens` with the actual specimen table name. The migration preserves the legacy category column and copies its assignments.
-6. Open `seed.php` once to add the sample specimens and category links. It can be run again safely.
-7. Open `index.php` to browse the catalogue. Use “Add a specimen” to submit an item with a photo.
+1. In the hosting control panel, open phpMyAdmin and select the class database.
+2. For a fresh database, import `database.sql`. It creates `YOUR_STUDENT_ID_specimens`, plus the category and specimen-category tables. Replace the placeholder with your assigned student ID before importing.
+   For an existing installation, back up the database and run `migration-m2m-categories.sql`. It creates the relationship table, keeps the old category column, and copies existing category assignments. Replace the specimen table placeholder in the migration with its actual table name.
+3. Copy `config.local.example.php` to `config.local.php` on the server and enter the MySQL connection settings. Keep the real file out of source control.
+4. Configure the admin username and a `password_hash()` value in `config.local.php` or the `ADMIN_USERNAME` and `ADMIN_PASSWORD_HASH` environment variables.
+5. Open `login.php` to manage specimens and categories. Use the public collection to search and view detail pages.
+6. After seeding the catalogue once, remove `seed.php` from the public server.
 
-Manage shared categories at `manage-categories.php`. A specimen can belong to multiple categories, and individual specimen-category links can be removed from its detail page without deleting either record. The upload form accepts JPEG, PNG, WEBP, and GIF images up to 5 MB; uploaded files are stored in `uploads/`.
+The upload form accepts JPEG, PNG, WEBP, and GIF images up to 5 MB. Uploaded files are stored in `uploads/`. Categories can be managed at `manage-categories.php`; each specimen can belong to multiple categories.
+
+## Apache requirements
+
+The `.htaccess` rules protect private config, SQL, and Markdown files and disable directory listings. On Apache, enable `mod_authz_core`, `mod_expires`, `mod_headers`, and `mod_deflate`, and allow `AllowOverride All` (or at least `FileInfo AuthConfig Options`) for this site and the uploads directory. Confirm `.htaccess` files are honored after deployment.

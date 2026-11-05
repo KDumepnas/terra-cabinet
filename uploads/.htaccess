@@ -1,0 +1,7 @@
+# User uploads are served as static images only. Do not execute scripts here.
+Options -Indexes -ExecCGI
+<IfModule mod_authz_core.c>
+  <FilesMatch "(?i)\.(?:php[0-9]?|phtml|phar|cgi|pl|py|sh)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>

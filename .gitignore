@@ -1,4 +1,17 @@
+# Local configuration and credentials
 config.local.php
+config.local.*.php
 .env
+.env.*
+!.env.example
+
+# Runtime uploads (allow the directory's protection file and placeholder)
 /uploads/*
+!/uploads/.htaccess
 !/uploads/.gitkeep
+
+# Local/editor/OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
