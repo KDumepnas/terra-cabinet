@@ -12,7 +12,7 @@ $dbUser = getenv('DB_USER') ?: '';
 $dbPassword = getenv('DB_PASSWORD') ?: '';
 $adminUsername = getenv('ADMIN_USERNAME') ?: '';
 $adminPasswordHash = getenv('ADMIN_PASSWORD_HASH') ?: '';
-$studentId = getenv('STUDENT_ID') ?: '2400544';
+$studentId = getenv('STUDENT_ID') ?: 'specimen';
 
 // A server-specific config.local.php can provide credentials when environment
 // variables are unavailable. That file is excluded from version control.

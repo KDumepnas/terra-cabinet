@@ -48,18 +48,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors) {
         $pdo = null;
         try {
-            $slugBase = strtolower(trim((string)preg_replace('/[^a-z0-9]+/i', '-', $name), '-')) ?: 'specimen';
-            $slug = $slugBase;
-            $check = db()->prepare('SELECT COUNT(*) FROM `' . SPECIMEN_TABLE . '` WHERE slug = ?');
-            for ($suffix = 2; ; $suffix++) { $check->execute([$slug]); if ((int)$check->fetchColumn() === 0) break; $slug = $slugBase . '-' . $suffix; }
-            $next = (int)db()->query('SELECT COALESCE(MAX(id), 0) + 1 FROM `' . SPECIMEN_TABLE . '`')->fetchColumn();
-            $catalogueNo = str_pad((string)$next, 3, '0', STR_PAD_LEFT);
             $pdo = db();
-            $pdo->beginTransaction();
-            $insert = $pdo->prepare('INSERT INTO `' . SPECIMEN_TABLE . '` (catalogue_no,slug,name,summary,description,formula,hardness,locality,price,image) VALUES (?,?,?,?,?,?,?,?,?,?)');
-            $insert->execute([$catalogueNo,$slug,$name,$summary,$description,$formula,$hardness,$locality,$price,$imagePath]);
-            save_specimen_categories((int)$pdo->lastInsertId(), $categoryIds);
-            $pdo->commit();
+            $slugBase = strtolower(trim((string)preg_replace('/[^a-z0-9]+/i', '-', $name), '-')) ?: 'specimen';
+            $saved = false;
+            for ($attempt = 0; $attempt < 3 && !$saved; $attempt++) {
+                try {
+                    $pdo->beginTransaction();
+                    $slug = $slugBase;
+                    $check = $pdo->prepare('SELECT COUNT(*) FROM `' . SPECIMEN_TABLE . '` WHERE slug = ?');
+                    for ($suffix = 2; ; $suffix++) { $check->execute([$slug]); if ((int)$check->fetchColumn() === 0) break; $slug = $slugBase . '-' . $suffix; }
+                    $next = (int)$pdo->query('SELECT COALESCE(MAX(CAST(catalogue_no AS UNSIGNED)), 0) + 1 FROM `' . SPECIMEN_TABLE . '`')->fetchColumn();
+                    $catalogueNo = str_pad((string)$next, 3, '0', STR_PAD_LEFT);
+                    $insert = $pdo->prepare('INSERT INTO `' . SPECIMEN_TABLE . '` (catalogue_no,slug,name,summary,description,formula,hardness,locality,price,image) VALUES (?,?,?,?,?,?,?,?,?,?)');
+                    $insert->execute([$catalogueNo,$slug,$name,$summary,$description,$formula,$hardness,$locality,$price,$imagePath]);
+                    save_specimen_categories((int)$pdo->lastInsertId(), $categoryIds);
+                    $pdo->commit();
+                    $saved = true;
+                } catch (PDOException $collision) {
+                    if ($pdo->inTransaction()) $pdo->rollBack();
+                    if ($collision->getCode() !== '23000' || $attempt === 2) throw $collision;
+                }
+            }
+            if (!$saved) throw new RuntimeException('Could not allocate a catalogue number.');
             header('Location: detail.php?slug=' . rawurlencode($slug), true, 303); exit;
         } catch (Throwable $error) {
             error_log('Terra Cabinet add error: ' . $error->getMessage());
