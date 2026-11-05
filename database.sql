@@ -1,4 +1,4 @@
--- Import in phpMyAdmin after selecting u455679702_db_3A.
+-- Select the assigned class database in phpMyAdmin before importing.
 CREATE TABLE `YOUR_STUDENT_ID_specimens` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `catalogue_no` VARCHAR(32) NOT NULL,
@@ -37,4 +37,5 @@ INSERT INTO `tc_categories` (`name`) VALUES
   ('Quartz Family'), ('Raw & Rough'), ('Tumbled & Polished'), ('Other');
 
 -- Initial catalogue items and their category associations are inserted by seed.php.
+
 
