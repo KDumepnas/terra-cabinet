@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/config.php';
 require_admin();
+require __DIR__ . '/hardness-helper.php';
 require __DIR__ . '/image-helper.php';
 $pageTitle = 'Add a specimen'; $rootPrefix = '';
 
@@ -18,6 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim((string)($_POST['description'] ?? ''));
     $formula = trim((string)($_POST['formula'] ?? ''));
     $hardness = trim((string)($_POST['hardness'] ?? ''));
+    $hardnessResult = normalize_hardness($hardness);
+    if ($hardnessResult['error'] !== null) $errors[] = $hardnessResult['error'];
+    else $hardness = $hardnessResult['value'];
     $locality = trim((string)($_POST['locality'] ?? ''));
     $price = filter_var($_POST['price'] ?? null, FILTER_VALIDATE_FLOAT);
 
@@ -81,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label>Short summary *<input name="summary" required maxlength="255" value="<?= e($_POST['summary'] ?? '') ?>"></label>
         <label>Description *<textarea name="description" rows="5" required><?= e($_POST['description'] ?? '') ?></textarea></label>
         <label>Formula<input name="formula" maxlength="255" value="<?= e($_POST['formula'] ?? '') ?>"></label>
-        <label>Hardness<input name="hardness" maxlength="100" value="<?= e($_POST['hardness'] ?? '') ?>"></label>
+        <label>Hardness (Mohs scale, optional)<input name="hardness" maxlength="100" pattern="\s*(?:[1-9](?:\.\d+)?|10(?:\.0+)?)\s*(?:[-–]|to)\s*(?:[1-9](?:\.\d+)?|10(?:\.0+)?))?\s*(?:\(Mohs scale\))?\s*|\s*" title="Use a number or range from 1 to 10, for example 7 or 3.5-4." value="<?= e($_POST['hardness'] ?? '') ?>"></label>
         <label>Locality *<input name="locality" required maxlength="150" value="<?= e($_POST['locality'] ?? '') ?>"></label>
         <label>Price (₱) *<input type="number" name="price" min="0" step="0.01" required value="<?= e($_POST['price'] ?? '') ?>"></label>
         <label>Specimen image (JPG, PNG, WEBP, GIF; max 5 MB) *<input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif" required></label>

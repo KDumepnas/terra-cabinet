@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/config.php';
 require_admin();
+require __DIR__ . '/hardness-helper.php';
 require __DIR__ . '/image-helper.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
@@ -24,6 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach (['name', 'summary', 'description', 'formula', 'hardness', 'locality'] as $field) {
         $fields[$field] = trim((string)($_POST[$field] ?? ''));
     }
+    $hardnessResult = normalize_hardness($fields['hardness']);
+    if ($hardnessResult['error'] !== null) $errors[] = $hardnessResult['error'];
+    else $fields['hardness'] = $hardnessResult['value'];
     $selectedCategoryIds = array_map('intval', (array)($_POST['categories'] ?? []));
     $price = filter_var($_POST['price'] ?? null, FILTER_VALIDATE_FLOAT);
 
@@ -97,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <label>Short summary *<input name="summary" required maxlength="255" value="<?= e((string)$item['summary']) ?>"></label>
 <label>Description *<textarea name="description" rows="5" required><?= e((string)$item['description']) ?></textarea></label>
 <label>Formula<input name="formula" maxlength="255" value="<?= e((string)$item['formula']) ?>"></label>
-<label>Hardness<input name="hardness" maxlength="100" value="<?= e((string)$item['hardness']) ?>"></label>
+<label>Hardness (Mohs scale, optional)<input name="hardness" maxlength="100" pattern="\s*(?:[1-9](?:\.\d+)?|10(?:\.0+)?)\s*(?:[-–]|to)\s*(?:[1-9](?:\.\d+)?|10(?:\.0+)?))?\s*(?:\(Mohs scale\))?\s*|\s*" title="Use a number or range from 1 to 10, for example 7 or 3.5-4." value="<?= e((string)$item['hardness']) ?>"></label>
 <label>Locality *<input name="locality" required maxlength="150" value="<?= e((string)$item['locality']) ?>"></label>
 <label>Price (₱) *<input type="number" name="price" min="0" step="0.01" required value="<?= e((string)$item['price']) ?>"></label>
 <p class="current-image">Current image: <img src="<?= e(ltrim((string)$original['image'], '/')) ?>" alt="<?= e((string)$original['name']) ?>"></p>
