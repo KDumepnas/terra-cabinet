@@ -981,6 +981,16 @@ img, svg {
 
 .nav-action { appearance: none; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .nav-action:hover { color: var(--accent, #d7ae76); }
+.category-count { margin-left: auto; color: var(--text-dim); font-size: .9rem; }
+.deleted-notice { padding: .85rem 1rem; border: 1px solid rgba(167,67,54,.65); border-radius: 6px; background: #faeeeb; color: #6e241b; }
+.honeypot { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip-path: inset(50%); white-space: nowrap; }
+.message-page { max-width: 60rem; }
+.message-card { margin: 1.25rem 0; padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--rule); border-radius: 6px; background: rgba(255,255,255,.025); }
+.message-card h2 { margin: 0; font-size: 1.35rem; }
+.message-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.message-meta time { color: var(--text-dim); font-size: .88rem; }
+.message-body { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .message-meta { align-items: flex-start; flex-direction: column; gap: .25rem; } }
 
 .error-panel { max-width: 48rem; margin: clamp(3rem, 10vh, 8rem) auto; padding: clamp(1.5rem, 4vw, 3rem); border: 1px solid var(--rule); background: var(--baize-deep); }
 .error-panel h1 { margin-top: .25rem; }

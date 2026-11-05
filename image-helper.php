@@ -22,8 +22,18 @@ function save_specimen_image(array $file): array
 
     $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
     $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+    $imageTypes = ['image/jpeg' => IMAGETYPE_JPEG, 'image/png' => IMAGETYPE_PNG, 'image/webp' => IMAGETYPE_WEBP, 'image/gif' => IMAGETYPE_GIF];
     if (!is_string($mime) || !isset($extensions[$mime])) {
         return ['error' => 'Upload a JPG, PNG, WEBP, or GIF image.'];
+    }
+    $imageInfo = @getimagesize($file['tmp_name']);
+    if (!is_array($imageInfo) || !isset($imageInfo[0], $imageInfo[1]) || (int)$imageInfo[2] !== $imageTypes[$mime]) {
+        return ['error' => 'The uploaded file is not a valid image.'];
+    }
+    $imageWidth = (int)$imageInfo[0];
+    $imageHeight = (int)$imageInfo[1];
+    if ($imageWidth < 1 || $imageHeight < 1 || $imageWidth > 8000 || $imageHeight > 8000 || $imageWidth * $imageHeight > 40000000) {
+        return ['error' => 'Image dimensions must be no larger than 8000 pixels per side or 40 megapixels total.'];
     }
 
     $uploadDir = __DIR__ . '/uploads';

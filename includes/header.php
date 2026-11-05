@@ -12,6 +12,7 @@ $currentPage = $currentPage ?? basename((string)($_SERVER['SCRIPT_NAME'] ?? ''),
     <?php if (is_admin()): ?>
       <li><a href="<?= e($rootPrefix) ?>add-item.php" <?= $currentPage === 'add-item' ? 'aria-current="page"' : '' ?>>Add a specimen</a></li>
       <li><a href="<?= e($rootPrefix) ?>manage-categories.php" <?= $currentPage === 'manage-categories' ? 'aria-current="page"' : '' ?>>Categories</a></li>
+      <li><a href="<?= e($rootPrefix) ?>messages.php" <?= $currentPage === 'messages' ? 'aria-current="page"' : '' ?>>Messages</a></li>
       <li><form method="post" action="<?= e($rootPrefix) ?>logout.php"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><button class="nav-action" type="submit">Log out</button></form></li>
     <?php else: ?>
       <li><a href="<?= e($rootPrefix) ?>login.php" <?= $currentPage === 'login' ? 'aria-current="page"' : '' ?>>Admin login</a></li>

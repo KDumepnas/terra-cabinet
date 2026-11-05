@@ -7,7 +7,7 @@ Options -Indexes
   </FilesMatch>
 </IfModule>
 
-# Cache the site's own static files to reduce repeat visits' transfer time.# Cache the site's own static files to reduce repeat visits' transfer time.
+# Cache the site's own static files to reduce repeat visits' transfer time.
 <IfModule mod_php.c>
   php_flag display_errors Off
   php_flag log_errors On
@@ -38,4 +38,5 @@ Options -Indexes
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/css application/javascript application/json image/svg+xml
 </IfModule>
+
 

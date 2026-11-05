@@ -82,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $uploads = realpath(__DIR__ . '/uploads');
                 if ($old && $uploads && str_starts_with($old, $uploads . DIRECTORY_SEPARATOR)) @unlink($old);
             }
+            set_flash('success', 'Specimen details and category assignments updated.');
             header('Location: detail.php?slug=' . rawurlencode($slug), true, 303); exit;
         }
     }

@@ -2,17 +2,19 @@
 declare(strict_types=1);
 require __DIR__ . '/config.php';
 $query = trim((string)($_GET['q'] ?? ''));
-$deleted = isset($_GET['deleted']);
+$flash = take_flash();
+$deleted = isset($_GET['deleted']) || ($flash['type'] ?? '') === 'success';
 $pageTitle = 'Mineral & Crystal Specimens';
 $rootPrefix = '';
 $sql = 'SELECT s.*, GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR "||") AS category_names FROM `' . SPECIMEN_TABLE . '` s LEFT JOIN `' . SPECIMEN_CATEGORY_TABLE . '` sc ON sc.specimen_id = s.id LEFT JOIN `' . CATEGORY_TABLE . '` c ON c.id = sc.category_id';
 if ($query !== '') {
-    $sql .= ' WHERE s.name LIKE :q0 OR s.summary LIKE :q1 OR s.description LIKE :q2 OR c.name LIKE :q3 OR s.locality LIKE :q4 OR s.formula LIKE :q5';
+    $sql .= " WHERE s.name LIKE :q0 ESCAPE '!' OR s.summary LIKE :q1 ESCAPE '!' OR s.description LIKE :q2 ESCAPE '!' OR c.name LIKE :q3 ESCAPE '!' OR s.locality LIKE :q4 ESCAPE '!' OR s.formula LIKE :q5 ESCAPE '!'";
 }
 $sql .= ' GROUP BY s.id ORDER BY s.catalogue_no, s.id';
 try {
     $stmt = db()->prepare($sql);
-    $like = '%' . $query . '%';
+    $escapedQuery = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $query);
+    $like = '%' . $escapedQuery . '%';
     $stmt->execute($query !== '' ? [':q0' => $like, ':q1' => $like, ':q2' => $like, ':q3' => $like, ':q4' => $like, ':q5' => $like] : []);
     $items = $stmt->fetchAll();
     $groups = [];
@@ -22,9 +24,8 @@ try {
     }
     $featured = null;
     $recentItems = [];
-    $collectionStats = ['total' => 0, 'categories' => 0];
+    $collectionStats = db()->query('SELECT COUNT(*) AS total, COUNT(DISTINCT locality) AS localities, (SELECT COUNT(*) FROM `' . CATEGORY_TABLE . '`) AS categories FROM `' . SPECIMEN_TABLE . '`')->fetch();
     if ($query === '') {
-        $collectionStats = db()->query('SELECT COUNT(*) AS total, (SELECT COUNT(*) FROM `' . CATEGORY_TABLE . '`) AS categories FROM `' . SPECIMEN_TABLE . '`')->fetch();
         $featured = db()->query('SELECT * FROM `' . SPECIMEN_TABLE . '` ORDER BY id ASC LIMIT 1')->fetch() ?: null;
         $recentItems = db()->query('SELECT * FROM `' . SPECIMEN_TABLE . '` ORDER BY created_at DESC, id DESC LIMIT 3')->fetchAll();
     }
@@ -51,9 +52,9 @@ try {
         <div class="hero-copy">
             <h1>Rare finds, carefully catalogued</h1>
             <p>Shop a growing collection of mineral specimens, each with its own field notes and price.</p>
-            <a href="#collection" class="btn">Shop the collection</a>
+            <a href="#collection" class="btn">Browse the collection</a>
         </div>
-        <div class="ledger-tag" aria-hidden="true"><div class="tag-no">SPECIMEN LOG</div><div class="tag-title"><?= count($items) ?> specimens</div><dl><dt>Status</dt><dd>Catalogued</dd><dt>Added</dt><dd>One at a time</dd></dl></div>
+        <div class="ledger-tag" aria-hidden="true"><div class="tag-no">SPECIMEN LOG</div><div class="tag-title"><?= (int)($collectionStats['total'] ?? count($items)) ?> specimens</div><dl><dt>Recorded</dt><dd>Field details</dd><dt>Localities</dt><dd><?= (int)($collectionStats['localities'] ?? 0) ?></dd></dl></div>
     </div>
 </section>
 <?php if ($query === '' && !isset($dbError) && $featured): ?>
@@ -118,7 +119,7 @@ try {
 <main id="collection">
     <section class="drawer">
         <div class="drawer-head"><h2><?= $query !== '' ? 'Search results' : 'The Collection' ?></h2><p><?= $query !== '' ? 'Results for “' . e($query) . '”' : 'Search the catalogue or explore the specimens below.' ?></p></div>
-        <?php if ($deleted): ?><p class="deleted-notice" role="status" style="padding:.75rem 1rem;border:1px solid currentColor;border-radius:6px;">The specimen was deleted from the catalogue.</p><?php endif; ?>
+        <?php if ($deleted): ?><p class="deleted-notice" role="status"><?= e($flash['message'] ?? 'The specimen was deleted from the catalogue.') ?></p><?php endif; ?>
         <form class="search-form" action="index.php" method="get" role="search">
             <label for="q">Search specimens</label>
             <input id="q" name="q" type="search" value="<?= e($query) ?>" placeholder="Name, mineral, formula, or locality">

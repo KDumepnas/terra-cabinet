@@ -70,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             if (!$saved) throw new RuntimeException('Could not allocate a catalogue number.');
+            set_flash('success', 'Specimen added to the catalogue.');
             header('Location: detail.php?slug=' . rawurlencode($slug), true, 303); exit;
         } catch (Throwable $error) {
             error_log('Terra Cabinet add error: ' . $error->getMessage());

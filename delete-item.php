@@ -17,4 +17,5 @@ if ($item) {
     $uploads = realpath(__DIR__ . '/uploads');
     if ($image && $uploads && str_starts_with($image, $uploads . DIRECTORY_SEPARATOR)) @unlink($image);
 }
+set_flash('success', 'The specimen and its category links were deleted.');
 header('Location: index.php?deleted=1#collection', true, 303);

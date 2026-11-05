@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/config.php';
+$flash = take_flash();
 $slug = (string)($_GET['slug'] ?? '');
 $stmt = db()->prepare('SELECT * FROM `' . SPECIMEN_TABLE . '` WHERE slug = ? LIMIT 1');
 $stmt->execute([$slug]);
@@ -21,6 +22,7 @@ $itemCategories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
 <?php require (__DIR__ . '/includes/header.php'); ?>
 <main><section class="specimen-detail">
+    <?php if ($flash): ?><p class="form-<?= e($flash['type']) ?>" role="status"><?= e($flash['message']) ?></p><?php endif; ?>
     <a href="index.php" class="back-link">&larr; Back to collection</a>
     <div class="detail-grid">
         <div class="detail-image"><img src="<?= e(ltrim($item['image'], '/')) ?>" alt="<?= e($item['name']) ?>"></div>

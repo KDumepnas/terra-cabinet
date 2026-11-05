@@ -13,8 +13,6 @@ if (!$specimenId || !$categoryId) {
     http_response_code(400);
     exit('A valid specimen and category are required.');
 }
-$stmt = db()->prepare('DELETE FROM `' . SPECIMEN_CATEGORY_TABLE . '` WHERE specimen_id = ? AND category_id = ?');
-$stmt->execute([$specimenId, $categoryId]);
 $slugStmt = db()->prepare('SELECT slug FROM `' . SPECIMEN_TABLE . '` WHERE id = ?');
 $slugStmt->execute([$specimenId]);
 $slug = $slugStmt->fetchColumn();
@@ -22,5 +20,20 @@ if (!$slug) {
     header('Location: index.php', true, 303);
     exit;
 }
+$pdo = db();
+$pdo->beginTransaction();
+$linksStmt = $pdo->prepare('SELECT category_id FROM `' . SPECIMEN_CATEGORY_TABLE . '` WHERE specimen_id = ? FOR UPDATE');
+$linksStmt->execute([$specimenId]);
+$links = $linksStmt->fetchAll(PDO::FETCH_COLUMN);
+if (count($links) <= 1) {
+    $pdo->rollBack();
+    set_flash('error', 'Each specimen must keep at least one category. Assign another category before removing this one.');
+    header('Location: detail.php?slug=' . rawurlencode((string)$slug), true, 303);
+    exit;
+}
+$stmt = $pdo->prepare('DELETE FROM `' . SPECIMEN_CATEGORY_TABLE . '` WHERE specimen_id = ? AND category_id = ?');
+$stmt->execute([$specimenId, $categoryId]);
+$pdo->commit();
+set_flash('success', 'Category connection removed. The specimen and category remain in the catalogue.');
 header('Location: detail.php?slug=' . rawurlencode((string)$slug), true, 303);
 exit;
